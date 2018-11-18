@@ -4,13 +4,13 @@ import android.graphics.Bitmap
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import kotlinx.android.synthetic.main.activity_main.*
-import org.opencv.core.Mat
 import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.OpenCVLoader
 import org.opencv.android.Utils
-import org.opencv.core.Size
+import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
+import org.opencv.core.CvType
 
 class MainActivity : AppCompatActivity() {
     private val THRESHOLD = 35.0
@@ -45,6 +45,7 @@ class MainActivity : AppCompatActivity() {
         button.setOnClickListener {
             loadImage()
             preprocess()
+            findDigitsPositions()
             showImage()
         }
     }
@@ -83,6 +84,31 @@ class MainActivity : AppCompatActivity() {
         Utils.matToBitmap(matTobeShown, bitmap)
         imageView.setImageBitmap(bitmap)
         imageView.invalidate()
+    }
+
+    private fun findDigitsPositions() {
+        val sumAxis0 = Mat()
+        Core.reduce(blurredImg, sumAxis0, 0, Core.REDUCE_SUM, CvType.CV_32S)
+        val sumAxis1 = Mat()
+        Core.reduce(blurredImg, sumAxis1, 1, Core.REDUCE_SUM, CvType.CV_32S)
+
+        for (i in 0 until sumAxis0.rows()) {
+        }
+
+//        val returnBuff = ByteArray((sumAxis0.total() * sumAxis0.channels()).toInt())
+//        sumAxis0.get(0, 0, returnBuff)
+
+//        val yuv = ByteArray((sumAxis0.total() * sumAxis0.channels()).toInt())
+//        sumAxis0.get(0, 0, yuv)
+//
+//        val rgb = MatOfInt(CvType.CV_32S)
+//        mRgba.convertTo(rgb, CvType.CV_32S)
+//        val rgba = IntArray((rgb.total() * rgb.channels()).toInt())
+//        rgb.get(0, 0, rgba)
+//
+//        for (i in returnBuff) {
+//
+//        }
     }
 
     public override fun onResume() {
