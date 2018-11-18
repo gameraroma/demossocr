@@ -16,6 +16,9 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var loaderCallback: BaseLoaderCallback
 
+    private val blurredImg = Mat()
+    private val grayImg = Mat()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -35,22 +38,31 @@ class MainActivity : AppCompatActivity() {
         }
 
         button.setOnClickListener {
-            val img: Mat = Utils.loadResource(this, R.drawable.test1)
-            val grayImg = Mat()
-            Imgproc.cvtColor(img, grayImg, Imgproc.COLOR_RGB2GRAY)
-
-            val high = grayImg.size().height
-            val width = grayImg.size().width
-
-            val blurredImg = Mat()
-            Imgproc.GaussianBlur(grayImg, blurredImg, Size(7.0,7.0), 0.0)
-
-            val bitmap = Bitmap.createBitmap(blurredImg.cols(), blurredImg.rows(), Bitmap.Config.ARGB_8888)
-            Utils.matToBitmap(blurredImg, bitmap)
-            imageView.setImageBitmap(bitmap)
-            imageView.invalidate()
+            loadImage()
+            showImage()
         }
 
+    }
+
+    private fun loadImage() {
+        val img: Mat = Utils.loadResource(this, R.drawable.test1)
+        // return Gray Image :grayImg
+        Imgproc.cvtColor(img, grayImg, Imgproc.COLOR_RGB2GRAY)
+
+        // return Blurred Image: blurredImg
+        Imgproc.GaussianBlur(grayImg, blurredImg, Size(7.0,7.0), 0.0)
+
+        // get height and width
+        val height = grayImg.size().height
+        val width = grayImg.size().width
+    }
+
+    private fun showImage() {
+        // show blurred image
+        val bitmap = Bitmap.createBitmap(blurredImg.cols(), blurredImg.rows(), Bitmap.Config.ARGB_8888)
+        Utils.matToBitmap(blurredImg, bitmap)
+        imageView.setImageBitmap(bitmap)
+        imageView.invalidate()
     }
 
     public override fun onResume() {
