@@ -1,7 +1,6 @@
 package com.example.chakpiwat.demossocr
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import kotlinx.android.synthetic.main.activity_main.*
@@ -12,10 +11,9 @@ import org.opencv.android.OpenCVLoader
 import org.opencv.android.Utils
 import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
-import org.opencv.imgproc.CLAHE
-import org.opencv.core.CvType
 
 class MainActivity : AppCompatActivity() {
+    private val THRESHOLD = 35.0
 
     private lateinit var loaderCallback: BaseLoaderCallback
 
@@ -69,21 +67,20 @@ class MainActivity : AppCompatActivity() {
     private fun preprocess() {
         val kernelSize = Size(5.0, 5.0)
 
-        val clahe = Imgproc.createCLAHE()
-        val claheMat = Mat(height.toInt(), width.toInt(), CvType.CV_8UC1)
-        clahe.apply(blurredImg, claheMat)
+        val clahe = Imgproc.createCLAHE(2.0, Size(6.0, 6.0))
+        clahe.apply(blurredImg, blurredImg)
 
         dst = Mat()
-        Imgproc.adaptiveThreshold(grayImg, dst, 255.0, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY_INV, 15,2.0)
+        Imgproc.adaptiveThreshold(grayImg, dst, 255.0, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY_INV, 127, THRESHOLD)
         val kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, kernelSize)
         Imgproc.morphologyEx(dst, dst, Imgproc.MORPH_CLOSE, kernel)
         Imgproc.morphologyEx(dst, dst, Imgproc.MORPH_OPEN, kernel)
     }
 
     private fun showImage() {
-        // show blurred image
-        val bitmap = Bitmap.createBitmap(blurredImg.cols(), blurredImg.rows(), Bitmap.Config.ARGB_8888)
-        Utils.matToBitmap(blurredImg, bitmap)
+        val matTobeShown = dst
+        val bitmap = Bitmap.createBitmap(matTobeShown.cols(), matTobeShown.rows(), Bitmap.Config.ARGB_8888)
+        Utils.matToBitmap(matTobeShown, bitmap)
         imageView.setImageBitmap(bitmap)
         imageView.invalidate()
     }
