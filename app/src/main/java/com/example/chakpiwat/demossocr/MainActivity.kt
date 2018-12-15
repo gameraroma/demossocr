@@ -186,25 +186,32 @@ class MainActivity : AppCompatActivity() {
             var w = roi.rows()
             val supposeW = max(1, (h / H_W_Ratio).toInt())
 
-//            if (w < supposeW / 2) {
-//                x0 = x0 + w - supposeW
-//                w = supposeW
-//                roi = Mat(input, Range(x0, x1), Range(y0, y1))
-//            }
+            if (x1 - x0 < 25 && Core.countNonZero(roi) / ((y1 - y0) * (x1 - x0)) < 0.2)
+                continue
+
+            if (w < supposeW / 2) {
+                x0 = max(x0 + w - supposeW, 0)
+                roi = Mat(input, Range(y0, y1), Range(x0, x1))
+                w = roi.rows()
+            }
+
+            val centerY = h / 2
+            val quaterY1 = h / 4
+            val quaterY3 = quaterY1 * 3
+            val centerX = w / 2
+            val lineWidth = 5
 
             val width = (max((w * 0.15).toInt(), 1) + max((h * 0.15).toInt(), 1)) / 2
-            val dhc = (width * 0.8).toInt()
-
             val smallDelta = ((h / ARC_TAN_THETA) / 4).toInt()
 
             val segments = arrayListOf(
-                Pair(Pair(w - width - smallDelta, width / 2), Pair(w, (h - dhc) / 2)),
-                Pair(Pair(w - width - 2 * smallDelta, (h + dhc) / 2), Pair(w - smallDelta, h - width / 2)),
-                Pair(Pair(width - smallDelta, h - width), Pair(w - width - smallDelta, h)),
-                Pair(Pair(0, (h + dhc) / 2), Pair(width, h - width / 2)),
-                Pair(Pair(smallDelta, width / 2), Pair(smallDelta + width, (h - dhc) / 2)),
-                Pair(Pair(smallDelta, 0), Pair(w + smallDelta, width)),
-                Pair(Pair(width - smallDelta, (h - dhc) / 2), Pair(w - width - smallDelta, (h + dhc) / 2))
+                Pair(Pair(w - 2 * width, quaterY1 - lineWidth), Pair(w, quaterY1 + lineWidth)),
+                Pair(Pair(w - 2 * width, quaterY3 - lineWidth), Pair(w, quaterY3 + lineWidth)),
+                Pair(Pair(centerX - lineWidth - smallDelta, h - 2 * width), Pair(centerX - smallDelta + lineWidth, h)),
+                Pair(Pair(0, quaterY3 - lineWidth), Pair(2 * width, quaterY3 + lineWidth)),
+                Pair(Pair(0, quaterY1 - lineWidth), Pair(2 * width, quaterY1 + lineWidth)),
+                Pair(Pair(centerX - lineWidth, 0), Pair(centerX + lineWidth, 2 * width)),
+                Pair(Pair(centerX - lineWidth, centerY - lineWidth), Pair(centerX + lineWidth, centerY + lineWidth))
             )
 
             val on = Array(segments.count()) { 0 }
@@ -220,7 +227,7 @@ class MainActivity : AppCompatActivity() {
                 val total = Core.countNonZero(segRoi)
                 val area = (xb - xa) * (yb - ya) * 0.9
 
-                if (total / area > 0.45) {
+                if (total / area > 0.25) {
                     on[i] = 1
                 }
             }
