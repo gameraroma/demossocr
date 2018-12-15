@@ -86,14 +86,56 @@ class MainActivity : AppCompatActivity() {
         imageView.invalidate()
     }
 
-    private fun findDigitsPositions() {
-        val sumAxis0 = Mat()
-        Core.reduce(blurredImg, sumAxis0, 0, Core.REDUCE_SUM, CvType.CV_32S)
-        val sumAxis1 = Mat()
-        Core.reduce(blurredImg, sumAxis1, 1, Core.REDUCE_SUM, CvType.CV_32S)
+    private fun helperExtract(oneDArray: Mat, threshold: Int = 20, dim: Int = 0) : ArrayList<Pair<Int, Int>> {
+        val res: ArrayList<Pair<Int, Int>> = arrayListOf()
+        var flag = 0
+        var temp = 0
 
-        for (i in 0 until sumAxis0.rows()) {
+        val size: Int = if (dim == 0) {
+            oneDArray.cols()
+        } else {
+            oneDArray.rows()
         }
+
+        for (i in 0 until size) {
+            val elem: Int = if (dim == 0) {
+                oneDArray[0,i][0].toInt()
+            } else {
+                oneDArray[i,0][0].toInt()
+            }
+            if (elem < 12 * 255) {
+                if (flag > threshold) {
+                    val start = i - flag
+                    val end = i
+                    temp = end
+                    if (end - start > 20) {
+                        res.add(Pair(start, end))
+                    }
+                }
+                flag = 0
+            } else {
+                flag += 1
+            }
+        }
+        if (flag > threshold) {
+            val start = temp
+            val end = oneDArray.cols()
+            if (end - start > 50) {
+                res.add(Pair(start, end))
+            }
+        }
+        return res
+    }
+
+    private fun findDigitsPositions() {
+        val reservedThreshold = 20
+
+        val sumAxis0 = Mat()
+        Core.reduce(dst, sumAxis0, 0, Core.REDUCE_SUM, CvType.CV_32S)
+        val horizonPosition = helperExtract(sumAxis0, reservedThreshold, 0)
+        val sumAxis1 = Mat()
+        Core.reduce(dst, sumAxis1, 1, Core.REDUCE_SUM, CvType.CV_32S)
+        val verticalPosition = helperExtract(sumAxis1, reservedThreshold * 4, 1)
 
 //        val returnBuff = ByteArray((sumAxis0.total() * sumAxis0.channels()).toInt())
 //        sumAxis0.get(0, 0, returnBuff)
