@@ -20,6 +20,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var grayImg: Mat
     private lateinit var blurredImg: Mat
     private lateinit var dst: Mat
+    private val digitsPositions: ArrayList<ArrayList<Pair<Int, Int>>> = arrayListOf()
 
     private var height: Double = 0.0
     private var width: Double = 0.0
@@ -132,10 +133,23 @@ class MainActivity : AppCompatActivity() {
 
         val sumAxis0 = Mat()
         Core.reduce(dst, sumAxis0, 0, Core.REDUCE_SUM, CvType.CV_32S)
-        val horizonPosition = helperExtract(sumAxis0, reservedThreshold, 0)
+        val horizonPosition: ArrayList<Pair<Int, Int>> = helperExtract(sumAxis0, reservedThreshold, 0)
         val sumAxis1 = Mat()
         Core.reduce(dst, sumAxis1, 1, Core.REDUCE_SUM, CvType.CV_32S)
-        val verticalPosition = helperExtract(sumAxis1, reservedThreshold * 4, 1)
+        var verticalPosition: ArrayList<Pair<Int, Int>> = helperExtract(sumAxis1, reservedThreshold * 4, 1)
+
+        // make vertical_position has only one element
+        if (verticalPosition.count() > 1) {
+            verticalPosition = arrayListOf(Pair(verticalPosition[0].first, verticalPosition[verticalPosition.count() - 1].second))
+        }
+
+
+        for (h in horizonPosition) {
+            for (v in verticalPosition) {
+                digitsPositions.add(arrayListOf(Pair(h.first, v.first), Pair(h.second, v.second)))
+            }
+        }
+        assert(digitsPositions.count() > 0)
 
 //        val returnBuff = ByteArray((sumAxis0.total() * sumAxis0.channels()).toInt())
 //        sumAxis0.get(0, 0, returnBuff)
