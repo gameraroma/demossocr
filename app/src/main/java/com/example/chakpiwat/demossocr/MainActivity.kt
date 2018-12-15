@@ -11,9 +11,26 @@ import org.opencv.android.Utils
 import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
 import org.opencv.core.CvType
+import kotlin.math.max
 
 class MainActivity : AppCompatActivity() {
+    private val DIGITS_LOOKUP = hashMapOf(
+        arrayOf(1, 1, 1, 1, 1, 1, 0) to "0",
+        arrayOf(1, 1, 0, 0, 0, 0, 0) to "1",
+        arrayOf(1, 0, 1, 1, 0, 1, 1) to "2",
+        arrayOf(1, 1, 1, 0, 0, 1, 1) to "3",
+        arrayOf(1, 1, 0, 0, 1, 0, 1) to "4",
+        arrayOf(0, 1, 1, 0, 1, 1, 1) to "5",
+        arrayOf(0, 1, 1, 1, 1, 1, 1) to "6",
+        arrayOf(1, 1, 0, 0, 0, 1, 0) to "7",
+        arrayOf(1, 1, 1, 1, 1, 1, 1) to "8",
+        arrayOf(1, 1, 1, 0, 1, 1, 1) to "9",
+        arrayOf(0, 0, 0, 0, 0, 1, 1) to "-"
+    )
+
     private val THRESHOLD = 35.0
+    private val H_W_Ratio = 1.9
+    private val ARC_TAN_THETA = 6.0
 
     private lateinit var loaderCallback: BaseLoaderCallback
 
@@ -47,6 +64,7 @@ class MainActivity : AppCompatActivity() {
             loadImage()
             preprocess()
             findDigitsPositions()
+            recognizeDigitsAreaMethod()
             showImage()
         }
     }
@@ -150,21 +168,66 @@ class MainActivity : AppCompatActivity() {
             }
         }
         assert(digitsPositions.count() > 0)
+    }
 
-//        val returnBuff = ByteArray((sumAxis0.total() * sumAxis0.channels()).toInt())
-//        sumAxis0.get(0, 0, returnBuff)
+    private fun recognizeDigitsAreaMethod() {
+        val input = dst
+        val output = blurredImg
 
-//        val yuv = ByteArray((sumAxis0.total() * sumAxis0.channels()).toInt())
-//        sumAxis0.get(0, 0, yuv)
-//
-//        val rgb = MatOfInt(CvType.CV_32S)
-//        mRgba.convertTo(rgb, CvType.CV_32S)
-//        val rgba = IntArray((rgb.total() * rgb.channels()).toInt())
-//        rgb.get(0, 0, rgba)
-//
-//        for (i in returnBuff) {
-//
-//        }
+        val digits: ArrayList<String> = arrayListOf()
+
+        for (c in digitsPositions) {
+            var x0 = c[0].first
+            val y0 = c[0].second
+            val x1 = c[1].first
+            val y1 = c[1].second
+            var roi = Mat(input, Range(y0, y1), Range(x0, x1))
+            val h = roi.cols()
+            var w = roi.rows()
+            val supposeW = max(1, (h / H_W_Ratio).toInt())
+
+//            if (w < supposeW / 2) {
+//                x0 = x0 + w - supposeW
+//                w = supposeW
+//                roi = Mat(input, Range(x0, x1), Range(y0, y1))
+//            }
+
+            val width = (max((w * 0.15).toInt(), 1) + max((h * 0.15).toInt(), 1)) / 2
+            val dhc = (width * 0.8).toInt()
+
+            val smallDelta = ((h / ARC_TAN_THETA) / 4).toInt()
+
+            val segments = arrayListOf(
+                Pair(Pair(w - width - smallDelta, width / 2), Pair(w, (h - dhc) / 2)),
+                Pair(Pair(w - width - 2 * smallDelta, (h + dhc) / 2), Pair(w - smallDelta, h - width / 2)),
+                Pair(Pair(width - smallDelta, h - width), Pair(w - width - smallDelta, h)),
+                Pair(Pair(0, (h + dhc) / 2), Pair(width, h - width / 2)),
+                Pair(Pair(smallDelta, width / 2), Pair(smallDelta + width, (h - dhc) / 2)),
+                Pair(Pair(smallDelta, 0), Pair(w + smallDelta, width)),
+                Pair(Pair(width - smallDelta, (h - dhc) / 2), Pair(w - width - smallDelta, (h + dhc) / 2))
+            )
+
+            val on = Array(segments.count()) { 0 }
+
+            for ((i, segment) in segments.withIndex()) {
+                val xa = segment.first.first
+                val ya = segment.first.second
+                val xb = segment.second.first
+                val yb = segment.second.second
+
+                val segRoi = Mat(roi, Range(ya, yb), Range(xa, xb))
+
+                val total = Core.countNonZero(segRoi)
+                val area = (xb - xa) * (yb - ya) * 0.9
+
+                if (total / area > 0.45) {
+                    on[i] = 1
+                }
+            }
+
+            val digit = DIGITS_LOOKUP[on] ?: "*"
+            digits.add(digit)
+        }
     }
 
     public override fun onResume() {
