@@ -15,17 +15,17 @@ import kotlin.math.max
 
 class MainActivity : AppCompatActivity() {
     private val DIGITS_LOOKUP = hashMapOf(
-        arrayOf(1, 1, 1, 1, 1, 1, 0) to "0",
-        arrayOf(1, 1, 0, 0, 0, 0, 0) to "1",
-        arrayOf(1, 0, 1, 1, 0, 1, 1) to "2",
-        arrayOf(1, 1, 1, 0, 0, 1, 1) to "3",
-        arrayOf(1, 1, 0, 0, 1, 0, 1) to "4",
-        arrayOf(0, 1, 1, 0, 1, 1, 1) to "5",
-        arrayOf(0, 1, 1, 1, 1, 1, 1) to "6",
-        arrayOf(1, 1, 0, 0, 0, 1, 0) to "7",
-        arrayOf(1, 1, 1, 1, 1, 1, 1) to "8",
-        arrayOf(1, 1, 1, 0, 1, 1, 1) to "9",
-        arrayOf(0, 0, 0, 0, 0, 1, 1) to "-"
+        "1111110" to "0",
+        "1100000" to "1",
+        "1011011" to "2",
+        "1110011" to "3",
+        "1100101" to "4",
+        "0110111" to "5",
+        "0111111" to "6",
+        "1100010" to "7",
+        "1111111" to "8",
+        "1110111" to "9",
+        "0000011" to "-"
     )
 
     private val THRESHOLD = 35.0
@@ -70,7 +70,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadImage() {
-        val img: Mat = Utils.loadResource(this, R.drawable.test1)
+        val img: Mat = Utils.loadResource(this, R.drawable.clock)
         // return Gray Image :grayImg
         grayImg = Mat()
         Imgproc.cvtColor(img, grayImg, Imgproc.COLOR_RGB2GRAY)
@@ -182,8 +182,8 @@ class MainActivity : AppCompatActivity() {
             val x1 = c[1].first
             val y1 = c[1].second
             var roi = Mat(input, Range(y0, y1), Range(x0, x1))
-            val h = roi.cols()
-            var w = roi.rows()
+            val h = roi.size().height.toInt()
+            var w = roi.size().width.toInt()
             val supposeW = max(1, (h / H_W_Ratio).toInt())
 
             if (x1 - x0 < 25 && Core.countNonZero(roi) / ((y1 - y0) * (x1 - x0)) < 0.2)
@@ -192,7 +192,7 @@ class MainActivity : AppCompatActivity() {
             if (w < supposeW / 2) {
                 x0 = max(x0 + w - supposeW, 0)
                 roi = Mat(input, Range(y0, y1), Range(x0, x1))
-                w = roi.rows()
+                w = roi.size().width.toInt()
             }
 
             val centerY = h / 2
@@ -232,8 +232,15 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            val digit = DIGITS_LOOKUP[on] ?: "*"
+            var key = ""
+            for (x in on) key += x
+
+            val digit = DIGITS_LOOKUP[key] ?: "*"
             digits.add(digit)
+
+//            if (Core.countNonZero(Mat(roi, Range(h - 3 * width / 4, h), Range(3 * width / 4, w))) / (9.0 / 16.0 * width * width) > 0.65 ) {
+//                digits.add(".")
+//            }
         }
     }
 
