@@ -91,7 +91,7 @@ class MainActivity : AppCompatActivity() {
         clahe.apply(blurredImg, blurredImg)
 
         dst = Mat()
-        Imgproc.adaptiveThreshold(grayImg, dst, 255.0, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY_INV, 127, THRESHOLD)
+        Imgproc.adaptiveThreshold(blurredImg, dst, 255.0, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY_INV, 127, THRESHOLD)
         val kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, kernelSize)
         Imgproc.morphologyEx(dst, dst, Imgproc.MORPH_CLOSE, kernel)
         Imgproc.morphologyEx(dst, dst, Imgproc.MORPH_OPEN, kernel)
